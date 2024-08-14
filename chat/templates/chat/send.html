@@ -1,0 +1,171 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+  <link rel="stylesheet" type="text/css" href="{% static 'pluggin/chating/style.css'  %}">
+</head>
+<body>
+
+<section class="msger">
+  <header class="msger-header">
+    <div class="msger-header-title">
+      <i class="fas fa-comment-alt"></i> <b>To :</b> {{detail.username}}
+    </div>
+    <div class="msger-header-options">
+      <span><i class="fas fa-cog"></i></span>
+    </div>
+  </header>
+
+  <main class="msger-chat" id="send-message">
+    {% for row in pesan %}
+    {% if row.recive.username == user.username %}
+    <div class="msg left-msg">
+      <div
+       class="msg-img"
+       style="background-image: url(https://image.flaticon.com/icons/svg/327/327779.svg)"
+      ></div>
+
+      <div class="msg-bubble">
+        <div class="msg-info">
+          <div class="msg-info-name">{{row.sender.username}}</div>
+          <div class="msg-info-time">{{row.created_at}}</div>
+        </div>
+
+        <div class="msg-text">
+          {{row.konten}}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="msg right-msg">
+      <div
+       class="msg-img"
+       style="background-image: url(https://image.flaticon.com/icons/svg/145/145867.svg)"
+      ></div>
+
+      <div class="msg-bubble">
+        <div class="msg-info">
+          <div class="msg-info-name">{{row.sender.username}}</div>
+          <div class="msg-info-time">{{row.created_at}}</div>
+        </div>
+
+        <div class="msg-text">
+          {{row.konten}}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+    <div id="frontendterima">
+
+    </div>  
+
+    <div id="frontendkirim">
+
+    </div> 
+  </main>
+
+  <form id="form" class="msger-inputarea">
+    <input type="text" id="kirimpesan" class="msger-input" placeholder="Enter your message...">
+    <button type="submit" class="msger-send-btn">Send</button>
+  </form>
+</section>
+
+
+{{detail.id|json_script:"id_recive"}}
+{{user.id|json_script:"id_sender"}}
+{{roomchat.kode_chat|json_script:"kodechat"}}
+
+<script type="text/javascript">
+
+      let id_sender = document.getElementById("id_sender")
+      let id_recive = document.getElementById("id_recive")
+      let kodechat = document.getElementById("kodechat")
+
+      id_sender = JSON.parse(id_sender.textContent)
+      id_recive = JSON.parse(id_recive.textContent)
+      kodechat = JSON.parse(kodechat.textContent)
+
+      let url_socket = `ws://${window.location.host}/chat/${kodechat}/`
+      const socket = new WebSocket(url_socket)
+
+      socket.onmessage = (e)=>{
+        let data = JSON.parse(e.data)
+        if (data.type == 'chat') {
+            let pesanmasuk = document.getElementById('send-message')
+            if (data.id_kirim == id_sender) {
+                let frontendkirim = document.getElementById('frontendkirim')
+                pesanmasuk.insertAdjacentHTML('beforeend', 
+                  `
+                  <div class="msg right-msg">
+                  <div
+                  class="msg-img"
+                  style="background-image: url(https://image.flaticon.com/icons/svg/145/145867.svg)"
+                  ></div>
+
+                  <div class="msg-bubble">
+                  <div class="msg-info">
+                  <div class="msg-info-name">{{row.sender.username}}</div>
+                  <div class="msg-info-time">{{row.created_at}}</div>
+                  </div>
+
+                  <div class="msg-text">
+                  ${data.message}
+                  </div>
+                  </div>
+                  </div>
+                  `)
+            }else{
+                let frontendterima = document.getElementById('frontendterima')
+                pesanmasuk.insertAdjacentHTML('beforeend',
+                  `
+                  <div class="msg left-msg">
+                  <div
+                  class="msg-img"
+                  style="background-image: url(https://image.flaticon.com/icons/svg/327/327779.svg)"
+                  ></div>
+
+                  <div class="msg-bubble">
+                  <div class="msg-info">
+                  <div class="msg-info-name">{{row.recive.username}}</div>
+                  <div class="msg-info-time">{{row.created_at}}</div>
+                  </div>
+
+                  <div class="msg-text">
+                  ${data.message}
+                  </div>
+                  </div>
+                  </div>
+                  `)
+            }
+        }
+      }
+
+      let form = document.getElementById('form')
+      form.addEventListener('submit', (e) => {
+      e.preventDefault()
+      let pesan = e.target.kirimpesan.value
+      socket.send(JSON.stringify({
+        'type':'pesan',
+        'status':'200',
+        'message' : pesan,
+        'id_sender':id_sender,
+        'id_recive':id_recive,
+      }))
+      form.reset()
+    })  
+
+
+</script>
+
+<script src="{% static 'pluggin/chating/script.js'  %}"></script>
+
+</body>
+</html>
+
+
+
+
